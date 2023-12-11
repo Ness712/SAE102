@@ -1,8 +1,6 @@
 
 import extensions.CSVFile;
 
-//DDLLLLDL
-
 class CoursDada extends Program { 
 
     final String CHEMIN_DOSSIER_SAUVEGARDE = "../sauvegardes";
@@ -23,6 +21,7 @@ class CoursDada extends Program {
         String nom = lancerJeu();
 
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
+        println(joueur.meilleurScore);
         contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
     }
 
@@ -158,9 +157,10 @@ class CoursDada extends Program {
         int indice = -1;
         int idxLigne = 0;
         boolean trouve = false;
+        chaine = toUpperCase(chaine);
 
         while (!trouve && idxLigne < length(tab)) {
-            if (equals(tab[idxLigne][idxColonneCiblee], chaine)) {
+            if (equals(toUpperCase(tab[idxLigne][idxColonneCiblee]), chaine)) {
                 trouve = true;
                 indice = idxLigne;
             } else {

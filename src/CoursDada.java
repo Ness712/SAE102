@@ -1,38 +1,38 @@
 
+import extensions.File;
 import extensions.CSVFile;
 
 class CoursDada extends Program { 
 
-    final String CHEMIN_DOSSIER_SAUVEGARDE = "../sauvegardes/";
-    final String CHEMIN_DOSSIER_QUESTIONS = "/questions/questions";
     final String NOM_FICHIER_SAUVEGARDE = "sauvegardeJoueurs.csv";
+    final String CHEMIN_FICHIER_SAUVEGARDE = "../sauvegardes/sauvegardeJoueurs.csv";
+    final String CHEMIN_DOSSIER_SAUVEGARDE = "../sauvegardes";
+    final String CHEMIN_DOSSIER_QUESTIONS = "../questions/questions";
     final int IDX_NOM_SAUVEGARDE = 0;
     final int IDX_POSITION_SAUVEGARDE = 1;
     final int IDX_SCORE_SAUVEGARDE = 2;
-
 
     /**
      * Fonction d'algorithme principal
      */
 
-    void _algorithm() {
+    void algorithm() {
         fichierSauvegardeEstCree();
-        String[][] contenuSauvegarde = recupererContenuCSV(CHEMIN_DOSSIER_SAUVEGARDE+NOM_FICHIER_SAUVEGARDE);
-        String nom = lancerJeuEtRecupNom();
+        String[][] contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
+        String nom = lancerJeu();
 
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
-        println("Bienvenu " + joueur.nom);
-        println("Ton meilleur score est : " + joueur.meilleurScore);
+        contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
+        println("Bienvenue " + joueur.nom + " !");
+        println("Ton meilleur score est de : " + joueur.meilleurScore + " ! ");
         println("Arriveras-tu à le battre ? ");
-        // afficherPlateau(); A faire
-        contenuSauvegarde = recupererContenuCSV(CHEMIN_DOSSIER_SAUVEGARDE+NOM_FICHIER_SAUVEGARDE);
     }
 
     /**
      * Fonction d'affichage du jeu 
      */
 
-    String lancerJeuEtRecupNom() {
+    String lancerJeu() {
         /* Lance l'affichage du jeu et renvoye le nom du joueur */
         println("*** Bienvenue dans CoursDada ! ***");
         print("Entre ton nom de joueur (Sans virgules ! ) : ");
@@ -79,7 +79,7 @@ class CoursDada extends Program {
         joueursCSV[0][0] = "nomDuJoueur";
         joueursCSV[0][1] = "positionDernièrePartie";
         joueursCSV[0][2] = "meilleurScore";
-        saveCSV(joueursCSV, CHEMIN_DOSSIER_SAUVEGARDE+NOM_FICHIER_SAUVEGARDE);
+        saveCSV(joueursCSV, CHEMIN_FICHIER_SAUVEGARDE);
         println("Fichier créé");
     }
 
@@ -108,7 +108,7 @@ class CoursDada extends Program {
         contenuNouvelleSauvegarde[nombreLigneTable][IDX_POSITION_SAUVEGARDE] = "" + joueur.position;
         contenuNouvelleSauvegarde[nombreLigneTable][IDX_SCORE_SAUVEGARDE] = "" + joueur.meilleurScore;
 
-        saveCSV(contenuNouvelleSauvegarde, CHEMIN_DOSSIER_SAUVEGARDE+NOM_FICHIER_SAUVEGARDE);
+        saveCSV(contenuNouvelleSauvegarde, CHEMIN_FICHIER_SAUVEGARDE);
     }
 
 
@@ -140,6 +140,47 @@ class CoursDada extends Program {
             ajouterJoueurASauvegarde(joueur, contenuSauvegarde);
         }
         return joueur;
+    }
+
+
+    /**
+     * Fonctions liées aux questions
+     */
+
+    String toString(Question question) {
+        return "Question n° : " + question.num + " - Matière : " + question.matiere + " - Intitulé : " + question.intitule + " - Réponse : " + question.reponse;
+    }
+
+    Question newQuestion(int num, String matiere, String intitule, String reponse) {
+        Question question = new Question();
+        question.num = num;
+        question.matiere = matiere;
+        question.intitule = intitule;
+        question.reponse = reponse;
+        return question;
+    }
+
+    void testNewQuestion(){
+        String matiere = "Francais";
+        String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_QUESTIONS + matiere + ".csv");
+        println(toString(contenuQuestions));
+        int indiceQuestion = 1;
+        Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
+        println(toString(question));
+    }
+
+    Question obtenirQuestionAuHasardDansMatiere(String matiere) {
+        String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_QUESTIONS + matiere + ".csv");
+        println(toString(contenuQuestions));
+        int nombreQuestions = length(contenuQuestions)-1;
+        int indiceQuestion = (int) (random()*nombreQuestions) + 1;
+        Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
+        println(toString(question));
+        return question;
+    }
+
+    void testObtenirQuestionAuHasardDansMatiere() {
+        println(obtenirQuestionAuHasardDansMatiere("Francais"));
     }
 
 
@@ -200,43 +241,13 @@ class CoursDada extends Program {
         assertFalse(charEstDansString("test", 'a'));
     }
 
-    /**
-     * Fonctions liées aux questions
-     */
-
-    String toString(Question question) {
-        return "Question n° : " + question.num + " - Matière : " + question.matiere + " - Intitulé : " + question.intitule + " - Réponse : " + question.reponse;
+    String lireFichier(String cheminFichier) {
+        File fichierElements = newFile(cheminFichier);
+        String chaine = "";
+        while (ready(fichierElements)) {
+            chaine = chaine + readLine(fichierElements) + '\n';
+        }
+        return chaine;
     }
 
-    Question newQuestion(int num, String matiere, String intitule, String reponse) {
-        Question question = new Question();
-        question.num = num;
-        question.matiere = matiere;
-        question.intitule = intitule;
-        question.reponse = reponse;
-        return question;
-    }
-
-    void testNewQuestion(){
-        String matiere = "Francais";
-        String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_SAUVEGARDE+CHEMIN_DOSSIER_QUESTIONS+matiere+".csv");
-        println(toString(contenuQuestions));
-        int indiceQuestion = 1;
-        Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
-        println(toString(question));
-    }
-
-    Question obtenirQuestionAuHasardDansMatiere(String matiere) {
-        String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_SAUVEGARDE+CHEMIN_DOSSIER_QUESTIONS+matiere+".csv");
-        println(toString(contenuQuestions));
-        int nombreQuestions = length(contenuQuestions)-1;
-        int indiceQuestion = (int) (random()*nombreQuestions) + 1;
-        Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
-        println(toString(question));
-        return question;
-    }
-
-    void testObtenirQuestionAuHasardDansMatiere() {
-        println(obtenirQuestionAuHasardDansMatiere("Francais"));
-    }
 }

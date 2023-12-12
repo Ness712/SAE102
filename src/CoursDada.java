@@ -12,6 +12,9 @@ class CoursDada extends Program {
     final int IDX_POSITION_SAUVEGARDE = 1;
     final int IDX_SCORE_SAUVEGARDE = 2;
 
+    final String RESET_COLOR = "\u001B[0m";
+    final String VERT = "\u001B[32m";
+
     /**
      * Fonction d'algorithme principal
      */
@@ -40,6 +43,8 @@ class CoursDada extends Program {
         println("Clique sur une touche pour commencer le jeu ! ");
         readString();
         clearScreen();
+
+        println(VERT + lireFichier("../patterns/titre.txt") + RESET_COLOR);
     }
 
     /**

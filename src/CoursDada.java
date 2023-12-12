@@ -19,13 +19,27 @@ class CoursDada extends Program {
     void algorithm() {
         fichierSauvegardeEstCree();
         String[][] contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
-        String nom = lancerJeu();
 
+        // Boucle permettant de s'assurer que le nettoyage amène l'écriture en bas de la page
+        for (int cpt = 0; cpt < 100; cpt++) {
+            println();
+        }
+        clearScreen();
+        String nom = lancerJeu();
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
         contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
+        println();
         println("Bienvenue " + joueur.nom + " !");
-        println("Ton meilleur score est de : " + joueur.meilleurScore + " ! ");
-        println("Arriveras-tu à le battre ? ");
+        if (joueur.meilleurScore > 0) {
+            println("Ton meilleur score est de : " + joueur.meilleurScore + " ! ");
+            println("Arriveras-tu à le battre ? ");
+        } else {
+            println("Oh on dirait bien que c'est ta première partie ! ");
+        }
+        println();
+        println("Clique sur une touche pour commencer le jeu ! ");
+        readString();
+        clearScreen();
     }
 
     /**

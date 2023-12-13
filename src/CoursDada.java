@@ -4,6 +4,9 @@ import extensions.CSVFile;
 
 class CoursDada extends Program { 
 
+    /**
+     * Constantes globales liées à la sauvegarde des fichiers
+     */
     final String NOM_FICHIER_SAUVEGARDE = "sauvegardeJoueurs.csv";
     final String CHEMIN_FICHIER_SAUVEGARDE = "../sauvegardes/sauvegardeJoueurs.csv";
     final String CHEMIN_DOSSIER_SAUVEGARDE = "../sauvegardes";
@@ -12,17 +15,30 @@ class CoursDada extends Program {
     final int IDX_POSITION_SAUVEGARDE = 1;
     final int IDX_SCORE_SAUVEGARDE = 2;
 
-    final String RESET_COLOR = "\u001B[0m";
-    final String VERT = "\u001B[32m";
-
     /**
      * Fonction d'algorithme principal
      */
 
     void algorithm() {
+        creerPlateauAleatoire(new int[0]);
+    }
+
+    void _algorithm() {
+        /**
+         * Constantes couleurs utilisés lors de l'affichage du jeu pour ce dernier soit coloré.
+         */
+        final String RESET_COLOR = "\u001B[0m";
+        final String VERT = "\u001B[32m";
+
+        /**
+         * Récupération des données du jeu
+         */
         fichierSauvegardeEstCree();
         String[][] contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
 
+        /**
+         * Lancement du jeu et récupération des données correspondantes aux joueur
+         */    
         // Boucle permettant de s'assurer que le nettoyage amène l'écriture en bas de la page
         for (int cpt = 0; cpt < 100; cpt++) {
             println();
@@ -56,7 +72,7 @@ class CoursDada extends Program {
         println("*** Bienvenue dans CoursDada ! ***");
         print("Entre ton nom de joueur (Sans virgules ! ) : ");
         String nom = readString();
-        while (charEstDansString(nom, ',') || charEstDansString(nom, '\n')) {
+        while (!estPrenomValide(nom)) {
             println("Ton prénom est invalide :/ Oublie pas que les virgules ne sont pas acceptées ! ");
             print("Allez on recommence ! Entre un nom valide : ");
             nom = readString();
@@ -72,7 +88,6 @@ class CoursDada extends Program {
 
         return plateau;
     }
-
 
     /**
      * Fonctions liées à la sauvegarde de la partie du joueur.
@@ -202,6 +217,47 @@ class CoursDada extends Program {
         println(obtenirQuestionAuHasardDansMatiere("Francais"));
     }
 
+    /**
+     * Fonctions de vérification de la saisie utilisateur
+     */
+
+    boolean estPrenomValide(String chaine) {
+        return !(length(chaine) <= 0 || length(chaine) > 20 || charEstDansString(chaine, ',') || charEstDansString(chaine, '\n'));
+    }
+
+
+    /**
+     * Fonctions de gestion du plateau de jeu
+     */
+
+    int[] creerPatternPlateau(int positionJoueur) {
+        /*
+        final int IDX_CASE_DEPART = 0;
+        final int IDX_CASE_FIN = 1;
+        final int IDX_CASE_ANGLAIS = 2;
+        final int IDX_CASE_CHIFFRES = 3;
+        final int IDX_CASE_FRANCAIS = 4;
+        final int IDX_CASE_GEO = 5;
+        final int IDX_CASE_HISTOIRE = 6;
+        final int IDX_CASE_ANGLAIS_GAUCHE = ;
+        final int IDX_CASE_CHIFFRES_GAUCHE = ;
+        final int IDX_CASE_FRANCAIS_GAUCHE = ;
+        final int IDX_CASE_GEO_GAUCHE = ;
+        final int IDX_CASE_HISTOIRE_GAUCHE = ;
+        final int IDX_CASE_ANGLAIS_GAUCHE = ;
+        final int IDX_CASE_CHIFFRES_GAUCHE = ;
+        final int IDX_CASE_FRANCAIS_GAUCHE = ;
+        final int IDX_CASE_GEO_GAUCHE = ;
+        final int IDX_CASE_HISTOIRE_GAUCHE = ;
+        */
+
+        int[] indicesPlateau = new int[17];
+        return indicesPlateau;
+    }
+
+    String creerPlateauAleatoire(int[] plateau) {
+        return "";
+    }
 
     /**
      * Fonctions utiles
@@ -267,6 +323,20 @@ class CoursDada extends Program {
             chaine = chaine + readLine(fichierElements) + '\n';
         }
         return chaine;
+    }
+
+    int entierRandom(int borneGauche, int borneDroite) {
+        /**
+         * Renvoie un entier compris dans l'intervalle borneGauche inclus à borneDroite exclus. 
+         * Attention : borneDroite doit être supérieur ou égal à borneGauche sinon 0 est retourné.
+         */
+
+        if (borneDroite < borneGauche) {
+            return 0;
+        }
+
+        double alea = random();
+        return (int)(alea * (borneDroite - borneGauche) + borneGauche);
     }
 
 }

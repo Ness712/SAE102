@@ -15,12 +15,35 @@ class CoursDada extends Program {
     final int IDX_POSITION_SAUVEGARDE = 1;
     final int IDX_SCORE_SAUVEGARDE = 2;
 
+    final int IDX_CASE_DEPART = 0;
+    final int IDX_CASE_FIN = 1;
+    final int IDX_CASE_ANGLAIS = 2;
+    final int IDX_CASE_CHIFFRES = 3;
+    final int IDX_CASE_FRANCAIS = 4;
+    final int IDX_CASE_GEO = 5;
+    final int IDX_CASE_HISTOIRE = 6;
+    final int IDX_CASE_ANGLAIS_GAUCHE = 7;
+    final int IDX_CASE_CHIFFRES_GAUCHE = 8;
+    final int IDX_CASE_FRANCAIS_GAUCHE = 9;
+    final int IDX_CASE_GEO_GAUCHE = 10;
+    final int IDX_CASE_HISTOIRE_GAUCHE = 11;
+    final int IDX_CASE_ANGLAIS_DROITE = 12;
+    final int IDX_CASE_CHIFFRES_DROITE = 13;
+    final int IDX_CASE_FRANCAIS_DROITE = 14;
+    final int IDX_CASE_GEO_DROITE = 15;
+    final int IDX_CASE_HISTOIRE_DROITE = 16;
+    final int IDX_CASE_VIDE = 17;
+    final int IDX_CASE_VIDE_GAUCHE = 18;
+    final int IDX_CASE_VIDE_DROITE = 19;
+    final int IDX_CASE_JOUEUR = 20;
+    final int IDX_CASE_JOUEUR_DROITE = 21;
+
     /**
      * Fonction d'algorithme principal
      */
 
     void algorithm() {
-        creerPlateauAleatoire(new int[0]);
+        genererCasesPlateauAleatoire(5);
     }
 
     void _algorithm() {
@@ -230,38 +253,54 @@ class CoursDada extends Program {
      * Fonctions de gestion du plateau de jeu
      */
 
-    int[] creerPatternPlateau(int positionJoueur) {
-        /*
-        final int IDX_CASE_DEPART = 0;
-        final int IDX_CASE_FIN = 1;
-        final int IDX_CASE_ANGLAIS = 2;
-        final int IDX_CASE_CHIFFRES = 3;
-        final int IDX_CASE_FRANCAIS = 4;
-        final int IDX_CASE_GEO = 5;
-        final int IDX_CASE_HISTOIRE = 6;
-        final int IDX_CASE_ANGLAIS_GAUCHE = ;
-        final int IDX_CASE_CHIFFRES_GAUCHE = ;
-        final int IDX_CASE_FRANCAIS_GAUCHE = ;
-        final int IDX_CASE_GEO_GAUCHE = ;
-        final int IDX_CASE_HISTOIRE_GAUCHE = ;
-        final int IDX_CASE_ANGLAIS_GAUCHE = ;
-        final int IDX_CASE_CHIFFRES_GAUCHE = ;
-        final int IDX_CASE_FRANCAIS_GAUCHE = ;
-        final int IDX_CASE_GEO_GAUCHE = ;
-        final int IDX_CASE_HISTOIRE_GAUCHE = ;
-        */
+    String[][] genererCasesPlateauAleatoire(int positionJoueur) {
 
-        int[] indicesPlateau = new int[17];
+        /**
+         * Indices des cases thèmes ouvertes sur la gauche dans le tableau de patterns
+         *      7 --> 11
+         * Indices des cases thèmes ouvertes sur la droite dans le tableau de patterns
+         *      12 --> 16
+         */
+
+        final int NOMBRE_CASE_PLATEAU = 17;
+        String[][] indicesPlateau = new String[NOMBRE_CASE_PLATEAU][7];
+        String[][] patternsPlateau = recupererContenuCSV("../patterns/cases_pattern.csv");
+
+        indicesPlateau[0] = patternsPlateau[IDX_CASE_DEPART];
+        indicesPlateau[NOMBRE_CASE_PLATEAU - 1] = patternsPlateau[IDX_CASE_FIN];
+        if (positionJoueur == (NOMBRE_CASE_PLATEAU - 1)) {
+            indicesPlateau[positionJoueur] = patternsPlateau[IDX_CASE_JOUEUR_DROITE];
+        } else {
+            indicesPlateau[positionJoueur] = patternsPlateau[IDX_CASE_JOUEUR];
+        }
+        for (int idxCase = 1; idxCase < positionJoueur; idxCase++) {
+            indicesPlateau[idxCase] = patternsPlateau[entierRandom(7,12)];
+        }
+        for (int idxCase = positionJoueur + 1; idxCase < (NOMBRE_CASE_PLATEAU - 1); idxCase++) {
+            indicesPlateau[idxCase] = patternsPlateau[entierRandom(12,17)];
+        }
+
+        println(toString(indicesPlateau));
+
         return indicesPlateau;
     }
 
-    String creerPlateauAleatoire(int[] plateau) {
+    String assemblerPlateau(int[] indexCasesPlateau) {
         return "";
     }
 
     /**
      * Fonctions utiles
      */
+
+    String toString(String[] tab) {
+        String chaine = "";
+        for (int idxTab = 0; idxTab < length(tab) - 1; idxTab++) {
+            chaine = chaine + tab[idxTab] + " - ";
+        }
+        chaine = chaine + tab[length(tab) - 1];
+        return chaine;
+    }
 
     String toString(String[][] tab) {
         String chaine = "";

@@ -38,20 +38,23 @@ class CoursDada extends Program {
     final int IDX_CASE_JOUEUR = 20;
     final int IDX_CASE_JOUEUR_DROITE = 21;
 
+    final String RESET_COLOR = "\u001B[0m";
+    final String VERT = "\u001B[32m";
+
     /**
      * Fonction d'algorithme principal
      */
 
     void algorithm() {
-        genererCasesPlateauAleatoire(5);
+        String[][] casesPlateau = genererCasesPlateauAleatoire(5);
+        String plateau = assemblerPlateau(casesPlateau);
+        println(plateau);
     }
 
     void _algorithm() {
         /**
          * Constantes couleurs utilisés lors de l'affichage du jeu pour ce dernier soit coloré.
          */
-        final String RESET_COLOR = "\u001B[0m";
-        final String VERT = "\u001B[32m";
 
         /**
          * Récupération des données du jeu
@@ -262,7 +265,7 @@ class CoursDada extends Program {
          *      12 --> 16
          */
 
-        final int NOMBRE_CASE_PLATEAU = 17;
+        final int NOMBRE_CASE_PLATEAU = 12;
         String[][] indicesPlateau = new String[NOMBRE_CASE_PLATEAU][7];
         String[][] patternsPlateau = recupererContenuCSV("../patterns/cases_pattern.csv");
 
@@ -280,13 +283,19 @@ class CoursDada extends Program {
             indicesPlateau[idxCase] = patternsPlateau[entierRandom(12,17)];
         }
 
-        println(toString(indicesPlateau));
-
         return indicesPlateau;
     }
 
-    String assemblerPlateau(int[] indexCasesPlateau) {
-        return "";
+    String assemblerPlateau(String[][] casesPlateau) {
+        String plateau = "";
+        for (int idxLigne = 0; idxLigne < length(casesPlateau[0]); idxLigne++) {
+            for (int idxCase = 0; idxCase < length(casesPlateau); idxCase++) {
+                plateau = plateau + casesPlateau[idxCase][idxLigne];
+            }
+            plateau = plateau + '\n';
+        }
+        plateau = supprimerCaractereIdx(length(plateau) - 1, plateau);
+        return plateau;
     }
 
     /**
@@ -376,6 +385,16 @@ class CoursDada extends Program {
 
         double alea = random();
         return (int)(alea * (borneDroite - borneGauche) + borneGauche);
+    }
+
+    String supprimerCaractereIdx(int idxASupprimer, String chaine) {
+        String chaineModifiee = "";
+        for (int idxChaine = 0; idxChaine < length(chaine); idxChaine ++) {
+            if (idxChaine != idxASupprimer) {
+                chaineModifiee = chaineModifiee + charAt(chaine, idxChaine);
+            }
+        }
+        return chaineModifiee;
     }
 
 }

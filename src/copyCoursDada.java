@@ -31,20 +31,25 @@ class copyCoursDada extends Program {
         String[][] casesPlateau = genererCasesPlateauAleatoire(5);
         String plateau = assemblerPlateau(casesPlateau);
         println(plateau);
-        String[][] fileAsString = new String[15][7];
-        File file = newFile("../patterns/cases_pattern.txt");
-        boolean finCase = true 
-        int indiceLigne = 0;
-        int indiceColonne = 0;
-        while (ready(file)) {
-            String ligne = readLine(file);
-            if (equals(ligne,"§-----------§\n") || equals(ligne,"-----------§\n") ) {
-                indiceLigne = indiceLigne + 1;
-            }
-            fileAsString[indiceLigne][indiceColonne] = ligne;
-            indiceColonne =indiceColonne + 1;
-        }
-        println(toString(fileAsString));
+        String[][] plateauTab = txtCaseToString("cases_pattern.txt");
+        String[][] deTab = txtCaseToString("de_pattern.txt");
+        println(toString(plateauTab));
+        println(plateauTab[0][0]+"  "+plateauTab[8][0]);
+        println(plateauTab[0][1]+"  "+plateauTab[8][1]);
+        println(plateauTab[0][2]+"  "+plateauTab[8][2]);
+        println(plateauTab[0][3]+"  "+plateauTab[8][3]);
+        println(plateauTab[0][4]+"  "+plateauTab[8][4]);
+        println(plateauTab[0][5]+"  "+plateauTab[8][5]);
+        println(plateauTab[0][6]+"  "+plateauTab[8][6]);
+
+        println(toString(deTab));
+        println(deTab[0][0]+"  "+deTab[2][0]);
+        println(deTab[0][1]+"  "+deTab[2][1]);
+        println(deTab[0][2]+"  "+deTab[2][2]);
+        println(deTab[0][3]+"  "+deTab[2][3]);
+        println(deTab[0][4]+"  "+deTab[2][4]);
+        println(deTab[0][5]+"  "+deTab[2][5]);
+        println(deTab[0][6]+"  "+deTab[2][6]);
     }
 
     void _algorithm() {
@@ -393,4 +398,38 @@ class copyCoursDada extends Program {
         return chaineModifiee;
     }
 
+    int nbLignesFile(File file) {
+        int nbLignesFile = 0;
+        while (ready(file)) {
+            readLine(file);
+            nbLignesFile = nbLignesFile + 1;
+        }
+        return nbLignesFile;
+    }
+
+    String[][] txtCaseToString(String fichier) {
+        File file = newFile("../patterns/"+fichier);
+        int nbLignesFile = nbLignesFile(file);
+        file = newFile("../patterns/"+fichier);
+        String[][] fileAsString = new String[nbLignesFile/7][7];
+        boolean finCase = false;
+        int indiceLigne = 0;
+        int indiceColonne = 0;
+        while (ready(file)) {
+            String ligne = readLine(file);
+            println(ligne);
+            println(equals(ligne,"§-----------§") || equals(ligne,"-----------§"));
+            if (equals(ligne,"§-----------§") || equals(ligne,"-----------§") ) {
+                finCase = !finCase;
+            }
+            fileAsString[indiceLigne][indiceColonne] = ligne;
+            indiceColonne = indiceColonne + 1;
+            if (!finCase) {
+                indiceLigne = indiceLigne + 1;
+                indiceColonne = 0;
+            }
+            println(indiceLigne + "    " + indiceColonne);
+        }
+        return fileAsString;
+    }
 }

@@ -2,7 +2,7 @@
 import extensions.File;
 import extensions.CSVFile;
 
-class CoursDada extends Program { 
+class copyCoursDada extends Program { 
 
     /**
      * Constantes globales liées à la sauvegarde des fichiers
@@ -15,7 +15,10 @@ class CoursDada extends Program {
     final int IDX_POSITION_SAUVEGARDE = 1;
     final int IDX_SCORE_SAUVEGARDE = 2;
 
-    final int NOMBRE_CASE_PLATEAU = 12;
+    final int IDX_CASE_DEPART = 0;
+    final int IDX_CASE_FIN = 1;
+    final int IDX_CASE_JOUEUR = 20;
+    final int IDX_CASE_JOUEUR_DROITE = 21;
 
     final String RESET_COLOR = "\u001B[0m";
     final String VERT = "\u001B[32m";
@@ -24,23 +27,31 @@ class CoursDada extends Program {
      * Fonction d'algorithme principal
      */
 
-    void _algorithm() {
-        final int[] THEMES_CASES = genererThemesCase();
-        String[][] casesPlateau = genererCasesPlateau(0, THEMES_CASES);
+    void algorithm() {
+        String[][] casesPlateau = genererCasesPlateauAleatoire(5);
         String plateau = assemblerPlateau(casesPlateau);
         println(plateau);
-        casesPlateau = genererCasesPlateau(5, THEMES_CASES);
-        plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
-        casesPlateau = genererCasesPlateau(7, THEMES_CASES);
-        plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
-        casesPlateau = genererCasesPlateau(11, THEMES_CASES);
-        plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
+        String[][] fileAsString = new String[15][7];
+        File file = newFile("../patterns/cases_pattern.txt");
+        boolean finCase = true 
+        int indiceLigne = 0;
+        int indiceColonne = 0;
+        while (ready(file)) {
+            String ligne = readLine(file);
+            if (equals(ligne,"§-----------§\n") || equals(ligne,"-----------§\n") ) {
+                indiceLigne = indiceLigne + 1;
+            }
+            fileAsString[indiceLigne][indiceColonne] = ligne;
+            indiceColonne =indiceColonne + 1;
+        }
+        println(toString(fileAsString));
     }
 
-    void algorithm() {
+    void _algorithm() {
+        /**
+         * Constantes couleurs utilisés lors de l'affichage du jeu pour ce dernier soit coloré.
+         */
+
         /**
          * Récupération des données du jeu
          */
@@ -50,7 +61,10 @@ class CoursDada extends Program {
         /**
          * Lancement du jeu et récupération des données correspondantes aux joueur
          */    
-        passerLignes(50);
+        // Boucle permettant de s'assurer que le nettoyage amène l'écriture en bas de la page
+        for (int cpt = 0; cpt < 100; cpt++) {
+            println();
+        }
         clearScreen();
         String nom = lancerJeu();
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
@@ -64,28 +78,11 @@ class CoursDada extends Program {
             println("Oh on dirait bien que c'est ta première partie ! ");
         }
         println();
-        println("Clique sur la touche \"Entrée\" pour lancer la partie ! ");
+        println("Clique sur une touche pour commencer le jeu ! ");
         readString();
         clearScreen();
 
-        final int[] THEMES_CASES = genererThemesCase();
-        boolean running = true;
-
-        while (running) {
-            println(VERT + lireFichier("../patterns/titre.txt") + RESET_COLOR);
-            passerLignes(3);
-
-            String[][] casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
-            String plateau = assemblerPlateau(casesPlateau);
-            println(plateau);
-            passerLignes(3);
-
-            println("Appuyez sur la touche \"Entrée\" pour lancer le dé !");
-            readString();
-
-
-            clearScreen();
-        }
+        println(VERT + lireFichier("../patterns/titre.txt") + RESET_COLOR);
     }
 
     /**
@@ -103,12 +100,6 @@ class CoursDada extends Program {
             nom = readString();
         }
         return nom;
-    }
-    
-    void passerLignes(int nbLignesAPasser) {
-        for (int cptLigne = 0; cptLigne < nbLignesAPasser; cptLigne++) {
-            println();
-        }
     }
 
     /**
@@ -244,6 +235,10 @@ class CoursDada extends Program {
         return question;
     }
 
+    void testObtenirQuestionAuHasardDansMatiere() {
+        println(obtenirQuestionAuHasardDansMatiere("Francais"));
+    }
+
     /**
      * Fonctions de vérification de la saisie utilisateur
      */
@@ -252,55 +247,39 @@ class CoursDada extends Program {
         return !(length(chaine) <= 0 || length(chaine) > 20 || charEstDansString(chaine, ',') || charEstDansString(chaine, '\n'));
     }
 
+
     /**
      * Fonctions de gestion du plateau de jeu
      */
 
-    int[] genererThemesCase() {
-        int[] themes = new int[NOMBRE_CASE_PLATEAU - 2];
-        for (int idxCase = 0; idxCase < length(themes); idxCase++) {
-            themes[idxCase] = entierRandom(0, 5);
-        }
-        return themes;
-    }
+    String[][] genererCasesPlateauAleatoire(int positionJoueur) {
 
-    String[][] genererCasesPlateau(int positionJoueur, int[] themesCases) {
         /**
          * Indices des cases thèmes ouvertes sur la gauche dans le tableau de patterns
          *      7 --> 11
          * Indices des cases thèmes ouvertes sur la droite dans le tableau de patterns
          *      12 --> 16
          */
-        final int IDX_CASE_DEPART = 0;
-        final int IDX_CASE_FIN = 1;
-        final int IDX_CASE_JOUEUR = 20;
-        final int IDX_CASE_JOUEUR_GAUCHE = 21;
-        final int IDX_CASE_JOUEUR_DROITE = 22;
 
+        final int NOMBRE_CASE_PLATEAU = 12;
         String[][] indicesPlateau = new String[NOMBRE_CASE_PLATEAU][7];
         String[][] patternsPlateau = recupererContenuCSV("../patterns/cases_pattern.csv");
 
         indicesPlateau[0] = patternsPlateau[IDX_CASE_DEPART];
         indicesPlateau[NOMBRE_CASE_PLATEAU - 1] = patternsPlateau[IDX_CASE_FIN];
         if (positionJoueur == (NOMBRE_CASE_PLATEAU - 1)) {
-            indicesPlateau[positionJoueur] = patternsPlateau[IDX_CASE_JOUEUR_GAUCHE];
-        } else if (positionJoueur == 0) {
             indicesPlateau[positionJoueur] = patternsPlateau[IDX_CASE_JOUEUR_DROITE];
         } else {
             indicesPlateau[positionJoueur] = patternsPlateau[IDX_CASE_JOUEUR];
         }
         for (int idxCase = 1; idxCase < positionJoueur; idxCase++) {
-            indicesPlateau[idxCase] = patternsPlateau[themesCases[idxCase - 1] + 7];
+            indicesPlateau[idxCase] = patternsPlateau[entierRandom(7,12)];
         }
         for (int idxCase = positionJoueur + 1; idxCase < (NOMBRE_CASE_PLATEAU - 1); idxCase++) {
-            indicesPlateau[idxCase] = patternsPlateau[themesCases[idxCase - 1] + 12];
+            indicesPlateau[idxCase] = patternsPlateau[entierRandom(12,17)];
         }
 
         return indicesPlateau;
-    }
-
-    String[][] deplacerJoueur(int anciennePosition, int positionJoueur, String[][] plateau) {
-        return new String[0][0];
     }
 
     String assemblerPlateau(String[][] casesPlateau) {
@@ -339,15 +318,6 @@ class CoursDada extends Program {
                 }
             }
         }
-        return chaine;
-    }
-
-    String toString(int[] tab) {
-        String chaine = "";
-        for (int idxTab = 0; idxTab < (length(tab) - 1); idxTab++) {
-            chaine = chaine + tab[idxTab] + " - ";
-        }
-        chaine = chaine + tab[length(tab) - 1];
         return chaine;
     }
 

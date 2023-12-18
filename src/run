@@ -1,0 +1,3 @@
+#!/bin/bash
+javac -cp ../lib/program.jar:. CoursDada.java
+java -cp ../lib/program.jar:. CoursDada

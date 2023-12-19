@@ -18,26 +18,23 @@ class CoursDada extends Program {
     final int NOMBRE_CASE_PLATEAU = 12;
 
     final String RESET_COLOR = "\u001B[0m";
+    final String ROUGE = "\u001B[31m";
     final String VERT = "\u001B[32m";
+    final String JAUNE = "\u001B[33m";
+    final String BLEU = "\u001B[34m";
+    final String VIOLET = "\u001B[35m";
+    final String CYAN = "\u001B[36m";
+    final String BLANC = "\u001B[37m";
+
+    boolean running = true;
 
     /**
      * Fonction d'algorithme principal
      */
 
     void _algorithm() {
-        final int[] THEMES_CASES = genererThemesCase();
-        String[][] casesPlateau = genererCasesPlateau(0, THEMES_CASES);
-        String plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
-        casesPlateau = genererCasesPlateau(5, THEMES_CASES);
-        plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
-        casesPlateau = genererCasesPlateau(7, THEMES_CASES);
-        plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
-        casesPlateau = genererCasesPlateau(11, THEMES_CASES);
-        plateau = assemblerPlateau(casesPlateau);
-        println(plateau);
+        String[] facesDe = recupererFacesDe();
+        println(facesDe[5]);
     }
 
     void algorithm() {
@@ -69,23 +66,46 @@ class CoursDada extends Program {
         clearScreen();
 
         final int[] THEMES_CASES = genererThemesCase();
-        boolean running = true;
+        final String TITRE_JEU = VERT + supprimerCaractereIdx(length(lireFichier("../patterns/titre.txt")) - 1, lireFichier("../patterns/titre.txt")) + RESET_COLOR;
+        final String[] FACES_DE = recupererFacesDe();
+
+        String[][] casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
+        String plateau = assemblerPlateau(casesPlateau);
+
+        String affichageDe = "";
+        dessinerJeu(TITRE_JEU, plateau, affichageDe);
+        println("Appuyez sur la touche \"Entrée\" pour lancer le dé");
+        readString();
 
         while (running) {
-            println(VERT + lireFichier("../patterns/titre.txt") + RESET_COLOR);
-            passerLignes(3);
+            int valeurDe = entierRandom(1, 7);
+            affichageDe = ROUGE + FACES_DE[valeurDe - 1] + RESET_COLOR;
+            deplacerJoueur(joueur, valeurDe);
+            casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
+            plateau = assemblerPlateau(casesPlateau);
+            clearScreen();
+            dessinerJeu(TITRE_JEU, plateau, affichageDe);
 
-            String[][] casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
-            String plateau = assemblerPlateau(casesPlateau);
-            println(plateau);
-            passerLignes(3);
+            print("REPONSE : ");
+            int reponse = readInt();
 
-            println("Appuyez sur la touche \"Entrée\" pour lancer le dé !");
+            if (!(reponse == 1)) {
+                joueur.position = 0;
+                casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
+                plateau = assemblerPlateau(casesPlateau);
+                clearScreen();
+                dessinerJeu(TITRE_JEU, plateau, affichageDe);
+                println("Appuyez sur la touche \"Entrée\" pour lancer le dé");
+            }
+
             readString();
-
-
+            if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
+                running = false;
+            }
             clearScreen();
         }
+
+        println("FINI");
     }
 
     /**
@@ -107,8 +127,26 @@ class CoursDada extends Program {
     
     void passerLignes(int nbLignesAPasser) {
         for (int cptLigne = 0; cptLigne < nbLignesAPasser; cptLigne++) {
-            println();
+            print('\n');
         }
+    }
+
+    String[] recupererFacesDe() {
+        String chaineDes = lireFichier("../patterns/de_pattern.txt");
+        String[] tableauFacesDe = new String[6];
+        String chaine = "";
+        int cpt = 0;
+        for (int idxChaineDes = 0; idxChaineDes < (length(chaineDes) - 1); idxChaineDes++) {
+            if (((charAt(chaineDes, idxChaineDes) == '\n') && (charAt(chaineDes, idxChaineDes + 1) == '\n')) || (idxChaineDes == (idxChaineDes - 3))) {
+                tableauFacesDe[cpt] = chaine;
+                cpt++;
+                chaine = "";
+            } else if (!(equals(chaine,"") && (charAt(chaineDes, idxChaineDes) == '\n'))) {
+                chaine = chaine + charAt(chaineDes, idxChaineDes);
+            }
+        }
+        tableauFacesDe[5] = chaine;
+        return tableauFacesDe;
     }
 
     /**
@@ -118,6 +156,15 @@ class CoursDada extends Program {
         String[] plateau = new String[30];
 
         return plateau;
+    }
+
+    void dessinerJeu(String titre, String plateau, String affichageDe) {
+        println(titre);
+        passerLignes(3);
+        println(plateau);
+        passerLignes(1);
+        println(affichageDe);
+        passerLignes(1);
     }
 
     /**
@@ -205,6 +252,16 @@ class CoursDada extends Program {
             ajouterJoueurASauvegarde(joueur, contenuSauvegarde);
         }
         return joueur;
+    }
+
+    void deplacerJoueur(Joueur joueur, int valeur) {
+        if ((joueur.position + valeur) == (NOMBRE_CASE_PLATEAU - 1)) {
+            running = false;
+        } else if ((joueur.position + valeur) < NOMBRE_CASE_PLATEAU) {
+            joueur.position = joueur.position + valeur;
+        } else {
+            joueur.position = 2 * (NOMBRE_CASE_PLATEAU - 1) - valeur - joueur.position;
+        }
     }
 
 
@@ -307,7 +364,14 @@ class CoursDada extends Program {
         String plateau = "";
         for (int idxLigne = 0; idxLigne < length(casesPlateau[0]); idxLigne++) {
             for (int idxCase = 0; idxCase < length(casesPlateau); idxCase++) {
-                plateau = plateau + casesPlateau[idxCase][idxLigne];
+                if (idxCase == 0 || idxCase == (length(casesPlateau) - 1)) {
+                    plateau = plateau + BLEU + casesPlateau[idxCase][idxLigne] + RESET_COLOR;
+                } else if (idxCase == 1) {
+                    String ligne = casesPlateau[idxCase][idxLigne];
+                    plateau = plateau + BLEU + charAt(ligne, 0) + RESET_COLOR + substring(ligne, 1, length(ligne)); 
+                } else {
+                    plateau = plateau + casesPlateau[idxCase][idxLigne];
+                }
             }
             plateau = plateau + '\n';
         }

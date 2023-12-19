@@ -13,7 +13,8 @@ class CoursDada extends Program {
     final String CHEMIN_DOSSIER_QUESTIONS = "../questions/questions";
     final int IDX_NOM_SAUVEGARDE = 0;
     final int IDX_POSITION_SAUVEGARDE = 1;
-    final int IDX_SCORE_SAUVEGARDE = 2;
+    final int IDX_MEILLEUR_SCORE_SAUVEGARDE = 2;
+    final int IDX_SCORE_COURANT_SAUVEGARDE = 3;
 
     final int NOMBRE_CASE_PLATEAU = 12;
 
@@ -32,11 +33,6 @@ class CoursDada extends Program {
      * Fonction d'algorithme principal
      */
 
-    void _algorithm() {
-        String[] facesDe = recupererFacesDe();
-        println(facesDe[5]);
-    }
-
     void algorithm() {
         /**
          * Récupération des données du jeu
@@ -52,18 +48,8 @@ class CoursDada extends Program {
         String nom = lancerJeu();
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
         contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
-        println();
-        println("Bienvenue " + joueur.nom + " !");
-        if (joueur.meilleurScore > 0) {
-            println("Ton meilleur score est de : " + joueur.meilleurScore + " ! ");
-            println("Arriveras-tu à le battre ? ");
-        } else {
-            println("Oh on dirait bien que c'est ta première partie ! ");
-        }
-        println();
-        println("Clique sur la touche \"Entrée\" pour lancer la partie ! ");
-        readString();
-        clearScreen();
+
+        afficherDebutJeu(joueur);
 
         final int[] THEMES_CASES = genererThemesCase();
         final String TITRE_JEU = VERT + supprimerCaractereIdx(length(lireFichier("../patterns/titre.txt")) - 1, lireFichier("../patterns/titre.txt")) + RESET_COLOR;
@@ -73,44 +59,60 @@ class CoursDada extends Program {
         String plateau = assemblerPlateau(casesPlateau);
 
         String affichageDe = "";
-        dessinerJeu(TITRE_JEU, plateau, affichageDe);
+        dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
         println("Appuyez sur la touche \"Entrée\" pour lancer le dé");
         readString();
 
         while (running) {
+            joueur.score += 1;
             int valeurDe = entierRandom(1, 7);
             affichageDe = ROUGE + FACES_DE[valeurDe - 1] + RESET_COLOR;
             deplacerJoueur(joueur, valeurDe);
+            if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
+                running = false;
+            } 
             casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
             plateau = assemblerPlateau(casesPlateau);
             clearScreen();
-            dessinerJeu(TITRE_JEU, plateau, affichageDe);
+            dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
             println("Tu viens d'avancer de " + valeurDe + " cases ! ");
 
-            print("REPONSE : ");
-            int reponse = readInt();
-            println();
-            
-            if (reponse != 1) {
+            boolean bonneReponse = true;
+            if ((joueur.position > 0) && (joueur.position < (NOMBRE_CASE_PLATEAU - 1))) {
+                String matiere = obtenirMatiereCase((joueur.position - 1), THEMES_CASES);
+                Question question = obtenirQuestionMatiere(matiere);
+                poserQuestion(question);
+                String reponseJoueur = readString();
+                bonneReponse = equals(toUpperCase(reponseJoueur), toUpperCase(question.reponse));
+            }
+
+            if (!bonneReponse) {
                 joueur.position = 0;
                 casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
                 plateau = assemblerPlateau(casesPlateau);
                 clearScreen();
-                dessinerJeu(TITRE_JEU, plateau, affichageDe);
+                dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
                 println("Mauvaise réponse :/ Retour à la case départ !");
-            } else {
+            } else if (bonneReponse) {
                 println("Bonne réponse ! Tu gardes ta place :)");
             }
 
             println("Appuyez sur la touche \"Entrée\" pour relancer le dé");
             readString();
-            if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
-                running = false;
-            }
             clearScreen();
         }
 
-        println("FINI");
+        if (joueur.score < joueur.meilleurScore) {
+            joueur.meilleurScore = joueur.score;
+        }
+        if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
+            joueur.position = 0;
+            joueur.score = 0;
+        }
+        sauvegarderPartie(joueur, contenuSauvegarde);
+
+        println("BRAVO");
+        println("Tu as réussi ce jeu ! A bientot pour de nouvelles aventures :)");
     }
 
     /**
@@ -154,6 +156,34 @@ class CoursDada extends Program {
         return tableauFacesDe;
     }
 
+    void afficherDebutJeu(Joueur joueur) {
+        println();
+        println("Bienvenue " + joueur.nom + " !");
+        if (joueur.meilleurScore > 0) {
+            println("Ton meilleur score est de : " + joueur.meilleurScore + " ! ");
+            println("Arriveras-tu à le battre ? ");
+        } else {
+            println("Oh on dirait bien que c'est ta première partie ! ");
+        }
+        println();
+        println("Clique sur la touche \"Entrée\" pour lancer la partie ! ");
+        readString();
+        clearScreen();
+    }
+
+    void dessinerJeu(String titre, String plateau, String affichageDe, int score) {
+        println(titre);
+        passerLignes(3);
+        println(plateau);
+        passerLignes(1);
+        if (!equals(affichageDe, "")) {
+            println(affichageDe);
+            passerLignes(1);
+        }
+        println("Score : " + score);
+        passerLignes(1);
+    }
+
     /**
      * Fonction liées au plateau
      */
@@ -161,15 +191,6 @@ class CoursDada extends Program {
         String[] plateau = new String[30];
 
         return plateau;
-    }
-
-    void dessinerJeu(String titre, String plateau, String affichageDe) {
-        println(titre);
-        passerLignes(3);
-        println(plateau);
-        passerLignes(1);
-        println(affichageDe);
-        passerLignes(1);
     }
 
     /**
@@ -223,25 +244,37 @@ class CoursDada extends Program {
 
         contenuNouvelleSauvegarde[nombreLigneTable][IDX_NOM_SAUVEGARDE] = joueur.nom;
         contenuNouvelleSauvegarde[nombreLigneTable][IDX_POSITION_SAUVEGARDE] = "" + joueur.position;
-        contenuNouvelleSauvegarde[nombreLigneTable][IDX_SCORE_SAUVEGARDE] = "" + joueur.meilleurScore;
+        contenuNouvelleSauvegarde[nombreLigneTable][IDX_MEILLEUR_SCORE_SAUVEGARDE] = "" + joueur.meilleurScore;
+        contenuNouvelleSauvegarde[nombreLigneTable][IDX_SCORE_COURANT_SAUVEGARDE] = "" + joueur.score;
 
         saveCSV(contenuNouvelleSauvegarde, CHEMIN_FICHIER_SAUVEGARDE);
     }
 
+    void sauvegarderPartie(Joueur joueur, String[][] contenuSauvegarde) {
+        int idxJoueurSauvegarde = idxStringDansTab(contenuSauvegarde, joueur.nom, IDX_NOM_SAUVEGARDE);
+        contenuSauvegarde[idxJoueurSauvegarde][IDX_POSITION_SAUVEGARDE] = "" + joueur.position;
+        contenuSauvegarde[idxJoueurSauvegarde][IDX_MEILLEUR_SCORE_SAUVEGARDE] = "" + joueur.meilleurScore;
+        contenuSauvegarde[idxJoueurSauvegarde][IDX_SCORE_COURANT_SAUVEGARDE] = "" + joueur.score;
+        saveCSV(contenuSauvegarde, CHEMIN_FICHIER_SAUVEGARDE);
+    }
 
     /**
      * Fonctions liées au Joueur
      */
 
     String toString(Joueur joueur) {
-        return "Joueur : " + joueur.nom + " - Dernière position en jeu : " + joueur.position + " - Meilleur score du joueur : " + joueur.meilleurScore;
+        return  "Joueur : "  + joueur.nom + 
+                " - Dernière position en jeu : " + joueur.position + 
+                " - Meilleur score du joueur : " + joueur.meilleurScore +
+                " - Score courant du joueur : " + joueur.score;
     }
 
-    Joueur newJoueur(String nom, int dernierePosition, int meilleurScore) {
+    Joueur newJoueur(String nom, int dernierePosition, int meilleurScore, int score) {
         Joueur joueur = new Joueur();
         joueur.nom = nom;
         joueur.position = dernierePosition;
         joueur.meilleurScore = meilleurScore;
+        joueur.score = score;
         return joueur;
     }
 
@@ -251,18 +284,17 @@ class CoursDada extends Program {
         if (idxJoueurSauvegarde > 0) {
             joueur = newJoueur( nomJoueur, 
                                 stringToInt(contenuSauvegarde[idxJoueurSauvegarde][IDX_POSITION_SAUVEGARDE]), 
-                                stringToInt(contenuSauvegarde[idxJoueurSauvegarde][IDX_SCORE_SAUVEGARDE]));
+                                stringToInt(contenuSauvegarde[idxJoueurSauvegarde][IDX_MEILLEUR_SCORE_SAUVEGARDE]),
+                                stringToInt(contenuSauvegarde[idxJoueurSauvegarde][IDX_SCORE_COURANT_SAUVEGARDE]));
         } else {
-            joueur = newJoueur(nomJoueur, 0, -1);
+            joueur = newJoueur(nomJoueur, 0, -1, 0);
             ajouterJoueurASauvegarde(joueur, contenuSauvegarde);
         }
         return joueur;
     }
 
     void deplacerJoueur(Joueur joueur, int valeur) {
-        if ((joueur.position + valeur) == (NOMBRE_CASE_PLATEAU - 1)) {
-            running = false;
-        } else if ((joueur.position + valeur) < NOMBRE_CASE_PLATEAU) {
+        if ((joueur.position + valeur) < NOMBRE_CASE_PLATEAU) {
             joueur.position = joueur.position + valeur;
         } else {
             joueur.position = 2 * (NOMBRE_CASE_PLATEAU - 1) - valeur - joueur.position;
@@ -287,23 +319,60 @@ class CoursDada extends Program {
         return question;
     }
 
-    void testNewQuestion(){
-        String matiere = "Francais";
+    Question obtenirQuestionMatiere(String matiere) {
         String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_QUESTIONS + matiere + ".csv");
-        println(toString(contenuQuestions));
-        int indiceQuestion = 1;
+        int nombreQuestions = length(contenuQuestions) - 1;
+        int indiceQuestion= entierRandom(1, nombreQuestions + 1); 
         Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
-        println(toString(question));
+        return question;
     }
 
-    Question obtenirQuestionAuHasardDansMatiere(String matiere) {
-        String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_QUESTIONS + matiere + ".csv");
-        println(toString(contenuQuestions));
-        int nombreQuestions = length(contenuQuestions)-1;
-        int indiceQuestion= entierRandom(0, nombreQuestions+1); 
-        Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
-        println(toString(question));
-        return question;
+    String obtenirMatiereCase(int indexCase, int[] themesCases) {
+        String matiere = "";
+        int numThemeCase = themesCases[indexCase];
+        if (numThemeCase < 0 || numThemeCase > 4) {
+            return matiere;
+        }
+        if (numThemeCase == 0) {
+            matiere = "Anglais";
+        } else if (numThemeCase == 1) {
+            matiere = "ChiffresRomains";
+        } else if (numThemeCase == 2) {
+            matiere = "Francais";
+        } else if (numThemeCase == 3) {
+            matiere = "Geographie";
+        } else if (numThemeCase == 4) {
+            matiere = "Histoire";
+        }
+        return matiere;
+    }
+
+    void testObtenirMatiereCase() {
+        final int[] THEMES_CASES = new int[]{0,2,4,3,1};
+        assertEquals("Anglais", obtenirMatiereCase(0, THEMES_CASES));
+        assertEquals("ChiffresRomains", obtenirMatiereCase(4, THEMES_CASES));
+        assertEquals("", obtenirMatiereCase(5, THEMES_CASES));
+    }
+
+    void poserQuestion(Question question) {
+        renommerMatiereQuestion(question);
+        String texteQuestion = "Tu es tombé sur une question " + question.matiere + " !\n\n";
+        texteQuestion = texteQuestion + question.intitule + '\n';
+        println(texteQuestion);
+    }
+
+    void renommerMatiereQuestion(Question question) {
+        if (equals(question.matiere, "ChiffresRomains")) {
+            question.matiere = "sur les chiffres romains";
+        } else if (equals(question.matiere, "Anglais")) {
+            question.matiere = "d'anglais";
+        } else if (equals(question.matiere, "Francais")) {
+            question.matiere = "de francais";
+        } else if (equals(question.matiere, "Geographie")) {
+            question.matiere = "de geographie";
+        } else if (equals(question.matiere, "Histoire")) {
+            question.matiere = "d'histoire";
+        }
     }
 
     /**

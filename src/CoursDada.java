@@ -85,19 +85,24 @@ class CoursDada extends Program {
             plateau = assemblerPlateau(casesPlateau);
             clearScreen();
             dessinerJeu(TITRE_JEU, plateau, affichageDe);
+            println("Tu viens d'avancer de " + valeurDe + " cases ! ");
 
             print("REPONSE : ");
             int reponse = readInt();
-
-            if (!(reponse == 1)) {
+            println();
+            
+            if (reponse != 1) {
                 joueur.position = 0;
                 casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
                 plateau = assemblerPlateau(casesPlateau);
                 clearScreen();
                 dessinerJeu(TITRE_JEU, plateau, affichageDe);
-                println("Appuyez sur la touche \"Entrée\" pour lancer le dé");
+                println("Mauvaise réponse :/ Retour à la case départ !");
+            } else {
+                println("Bonne réponse ! Tu gardes ta place :)");
             }
 
+            println("Appuyez sur la touche \"Entrée\" pour relancer le dé");
             readString();
             if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
                 running = false;

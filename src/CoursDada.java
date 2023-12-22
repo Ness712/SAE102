@@ -4,35 +4,20 @@ import extensions.CSVFile;
 
 class CoursDada extends Program { 
 
-    /**
-     * Constantes globales liées à la sauvegarde des fichiers
-     */
-    final String NOM_FICHIER_SAUVEGARDE = "sauvegardeJoueurs.csv";
     final String CHEMIN_FICHIER_SAUVEGARDE = "../sauvegardes/sauvegardeJoueurs.csv";
-    final String CHEMIN_DOSSIER_SAUVEGARDE = "../sauvegardes";
-    final String CHEMIN_DOSSIER_QUESTIONS = "../questions/questions";
     final int IDX_NOM_SAUVEGARDE = 0;
     final int IDX_POSITION_SAUVEGARDE = 1;
     final int IDX_MEILLEUR_SCORE_SAUVEGARDE = 2;
     final int IDX_SCORE_COURANT_SAUVEGARDE = 3;
 
     final int NOMBRE_CASE_PLATEAU = 12;
-
-    final String RESET_COLOR = "\u001B[0m";
-    final String ROUGE = "\u001B[31m";
-    final String VERT = "\u001B[32m";
-    final String JAUNE = "\u001B[33m";
-    final String BLEU = "\u001B[34m";
-    final String VIOLET = "\u001B[35m";
-    final String CYAN = "\u001B[36m";
-    final String BLANC = "\u001B[37m";
-
-    boolean running = true;
+    final int[] THEMES_CASES = genererThemesCase();
+    final String TITRE_JEU = utiliserCouleur("vert") + supprimerCaractereIdx(length(lireFichier("../patterns/titre.txt")) - 1, lireFichier("../patterns/titre.txt")) + utiliserCouleur("reset");
+    final String[] FACES_DE = recupererFacesDe();
 
     /**
-     * Fonction d'algorithme principal
+     ****** Fonction d'algorithme principal ******
      */
-
     void algorithm() {
         /**
          * Récupération des données du jeu
@@ -49,95 +34,111 @@ class CoursDada extends Program {
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
         contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
 
+        /**
+         * Premier affichage du plateau le dé n'étant pas encore lancé
+         */
         afficherDebutJeu(joueur);
-
-        final int[] THEMES_CASES = genererThemesCase();
-        final String TITRE_JEU = VERT + supprimerCaractereIdx(length(lireFichier("../patterns/titre.txt")) - 1, lireFichier("../patterns/titre.txt")) + RESET_COLOR;
-        final String[] FACES_DE = recupererFacesDe();
-
         String[][] casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
         String plateau = assemblerPlateau(casesPlateau);
-
         String affichageDe = "";
         dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
-        println("Appuyez sur la touche \"Entrée\" pour lancer le dé");
-        readString();
 
+        /**
+         * Attente du lancement et lancement de la boucle de jeu 
+         */
+        println("Appuyez sur la touche \"Entrée\" pour lancer le dé");
+        String attente = readString();
+        boolean fini = false;
+        boolean running = true;
+
+        /**
+         * Boucle de jeu
+         */
         while (running) {
             joueur.score += 1;
             int valeurDe = entierRandom(1, 7);
-            affichageDe = ROUGE + FACES_DE[valeurDe - 1] + RESET_COLOR;
+            affichageDe = utiliserCouleur("rouge") + FACES_DE[valeurDe - 1] + utiliserCouleur("reset");
             deplacerJoueur(joueur, valeurDe);
+
+            /**
+             * Vérification que le joueur n'as pas atteint la case d'arrivée
+             */
             if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
                 running = false;
-            } 
+                fini = true;
+            }
+
             casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
             plateau = assemblerPlateau(casesPlateau);
             clearScreen();
             dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
             println("Tu viens d'avancer de " + valeurDe + " cases ! ");
 
-            boolean bonneReponse = true;
-            if ((joueur.position > 0) && (joueur.position < (NOMBRE_CASE_PLATEAU - 1))) {
-                String matiere = obtenirMatiereCase((joueur.position - 1), THEMES_CASES);
-                Question question = obtenirQuestionMatiere(matiere);
-                poserQuestion(question);
-                String reponseJoueur = readString();
-                bonneReponse = equals(toUpperCase(reponseJoueur), toUpperCase(question.reponse));
-            }
+            if (!equals(attente, "sortie")) {
+                boolean bonneReponse = true;
+                String reponseJoueur = "";
+                Question question = newQuestion(0, "", "", "");
+                if ((joueur.position > 0) && (joueur.position < (NOMBRE_CASE_PLATEAU - 1))) {
+                    String matiere = obtenirMatiereCase((joueur.position - 1), THEMES_CASES);
+                    question = obtenirQuestionMatiere(matiere);
+                    poserQuestion(question);
+                    reponseJoueur = readString();
+                    bonneReponse = equals(toUpperCase(reponseJoueur), toUpperCase(question.reponse));
+                }
 
-            if (!bonneReponse) {
-                joueur.position = 0;
-                casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
-                plateau = assemblerPlateau(casesPlateau);
-                clearScreen();
-                dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
-                println("Mauvaise réponse :/ Retour à la case départ !");
-            } else if (bonneReponse) {
-                println("Bonne réponse ! Tu gardes ta place :)");
-            }
+                if (!bonneReponse) {
+                    if (!equals(reponseJoueur, "sortie")) {
+                        mauvaiseReponse(joueur, question, reponseJoueur, affichageDe);
+                    } else {
+                        running = false;
+                    }
+                } else if (bonneReponse) {
+                    println("Bonne réponse ! Tu gardes ta place :)");
+                }
 
-            println("Appuyez sur la touche \"Entrée\" pour relancer le dé");
-            readString();
+                println("Appuyez sur la touche \"Entrée\" pour relancer le dé");
+                if (!equals(reponseJoueur, "sortie")) {
+                    attente = readString();
+                }
+            } else {
+                running = false;
+            }
             clearScreen();
         }
 
-        if (joueur.score < joueur.meilleurScore) {
-            joueur.meilleurScore = joueur.score;
+        if (fini) {
+            finDePartie(joueur, contenuSauvegarde);
+        } else {
+            println("A bientôt !");
         }
-        if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
-            joueur.position = 0;
-            joueur.score = 0;
-        }
-        sauvegarderPartie(joueur, contenuSauvegarde);
-
-        println("BRAVO");
-        println("Tu as réussi ce jeu ! A bientot pour de nouvelles aventures :)");
     }
 
     /**
-     * Fonction d'affichage du jeu 
+     ****** Fonction d'affichage du jeu ******
      */
 
-    String lancerJeu() {
-        /* Lance l'affichage du jeu et renvoye le nom du joueur */
+    /**
+     * La fonction afficherAccueil affiche la page d'accueil du jeu (/!\ Page à embellir /!\)
+     */
+    void afficherAccueil() {
         println("*** Bienvenue dans CoursDada ! ***");
         print("Entre ton nom de joueur (Sans virgules ! ) : ");
-        String nom = readString();
-        while (!estPrenomValide(nom)) {
-            println("Ton prénom est invalide :/ Oublie pas que les virgules ne sont pas acceptées ! ");
-            print("Allez on recommence ! Entre un nom valide : ");
-            nom = readString();
-        }
-        return nom;
     }
     
+    /**
+     * La fonction passerLignes permet de laisser autant de lignes vides que le nombre donné en 
+     * paramètre
+     */
     void passerLignes(int nbLignesAPasser) {
         for (int cptLigne = 0; cptLigne < nbLignesAPasser; cptLigne++) {
             print('\n');
         }
     }
 
+    /**
+     * La fonction recupererFacesDe renvoie un tableau de chaines de caractères. Chaque chaine de
+     * caractères de ce tableau correspond à la face d'un dé (face de valeur 1, ..., face de valeur 6)
+     */
     String[] recupererFacesDe() {
         String chaineDes = lireFichier("../patterns/de_pattern.txt");
         String[] tableauFacesDe = new String[6];
@@ -156,6 +157,9 @@ class CoursDada extends Program {
         return tableauFacesDe;
     }
 
+    /**
+     * La fonction afficherDebutJeu affiche une fenêtre intérmédiaire avant de commencer le jeu
+     */
     void afficherDebutJeu(Joueur joueur) {
         println();
         println("Bienvenue " + joueur.nom + " !");
@@ -171,6 +175,9 @@ class CoursDada extends Program {
         clearScreen();
     }
 
+    /**
+     * La fonction dessinerJeu() affiche le jeu
+     */
     void dessinerJeu(String titre, String plateau, String affichageDe, int score) {
         println(titre);
         passerLignes(3);
@@ -180,26 +187,124 @@ class CoursDada extends Program {
             println(affichageDe);
             passerLignes(1);
         }
-        println("Score : " + score);
+        println("Score : " + score + " - Si vous souhaitez enregistrer votre partie et quitter le jeu maintenant, tape \"Sortie\" et valide");
         passerLignes(1);
     }
 
     /**
-     * Fonction liées au plateau
+     * La fonction utiliserCouleur renvoie le code couleur ANSI de la couleur sous forme de chaine de 
+     * caractère à concatener avec avec la chaine à colorer
      */
-    String[] creerPlateau() {
-        String[] plateau = new String[30];
+    String utiliserCouleur(String couleur) {
+        couleur = toUpperCase(couleur);
+        if (equals(couleur, "RESET")) {
+            return "\u001B[0m";
+        } else if (equals(couleur, "NOIRE")) {
+            return "\u001B[30m";
+        } else if (equals(couleur, "ROUGE")) {
+            return "\u001B[31m";
+        } else if (equals(couleur, "VERT")) {
+            return "\u001B[32m";
+        } else if (equals(couleur, "JAUNE")) {
+            return "\u001B[33m";
+        } else if (equals(couleur, "BLEU")) {
+            return "\u001B[34m";
+        } else if (equals(couleur, "VIOLET")) {
+            return "\u001B[35m";
+        } else if (equals(couleur, "CYAN")) {
+            return "\u001B[36m";
+        } else if (equals(couleur, "GRIS")) {
+            return "\u001B[37m";
+        } else {
+            return "";
+        }
+    }
 
-        return plateau;
+    void testUtiliserCouleur() {
+        assertEquals("\u001B[32m", utiliserCouleur("vert"));
+        assertEquals("\u001B[0m", utiliserCouleur("reset"));
+        assertEquals("", utiliserCouleur("N'importe quoi"));
     }
 
     /**
-     * Fonctions liées à la sauvegarde de la partie du joueur.
+     ****** Fonctions de découpage du jeu ******
      */
 
-    void fichierSauvegardeEstCree () {
-        boolean estCree = false;
+    /**
+     * La fonction lancerJeu affiche la page d'accueil du jeu et renvoie un nom valide pour le joueur
+     */
+    String lancerJeu() {
+        afficherAccueil();
+        String nom = readString();
+        while (!estPrenomValide(nom)) {
+            println("Ton prénom est invalide :/ Oublie pas que les virgules ne sont pas acceptées ! ");
+            print("Allez on recommence ! Entre un nom valide : ");
+            nom = readString();
+        }
+        return nom;
+    }
+
+    /**
+     * La fonction finDePartie réalise les tâches à réaliser lorsque le joueur a fini la partie en
+     * atteignant la case d'arrivée et affiche un message de fin 
+     */
+    void finDePartie(Joueur joueur, String[][] contenuSauvegarde) {
+        String messageFelicitations  = "BRAVO !\n\nTu as réussi à finir de ce jeu ! ";
+            if ((joueur.score < joueur.meilleurScore) || (joueur.meilleurScore == -1)) {
+                if (joueur.score < joueur.meilleurScore) {
+                    messageFelicitations    += "Encore mieux tu as battu ton meilleur record qui était de " 
+                                            + joueur.meilleurScore + " en faisant un score de " 
+                                            + joueur.score + " ! ";
+                }
+                joueur.meilleurScore = joueur.score;
+            }
+            if (joueur.position == (NOMBRE_CASE_PLATEAU - 1)) {
+                joueur.position = 0;
+                joueur.score = 0;
+            }
+        sauvegarderPartie(joueur, contenuSauvegarde);
+        messageFelicitations += "A bientot pour de nouvelles aventures :)";
+        println(messageFelicitations);
+    }
+
+    /**
+     * La fonction mauvaiseReponse réalise les tâches opérations nécessaires si le joueur donne une
+     * mauvaise réponse
+     */
+    void mauvaiseReponse(Joueur joueur, Question question, String reponseJoueur, String affichageDe) {
+        joueur.position = 0;
+        String[][] casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
+        String plateau = assemblerPlateau(casesPlateau);
+        clearScreen();
+        dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
+        println("Mauvaise réponse :/ Retour à la case départ !");
+        println("Tu as répondu : " + reponseJoueur);
+        println("La bonne réponse était : " + question.reponse);
+    }
+
+    /**
+     * La fonction poser question récupère l'intitulé et le thème d'une question et l'affiche
+     */
+    void poserQuestion(Question question) {
+        renommerMatiereQuestion(question);
+        String texteQuestion = "Tu es tombé sur une question " + question.matiere + " !\n\n";
+        texteQuestion = texteQuestion + question.intitule + '\n';
+        println(texteQuestion);
+    }
+
+    /**
+     ****** Fonctions liées à la sauvegarde de la partie du joueur. ******
+     */
+
+    /**
+     * La fonction fichierSauvegardeEstCree vérifie si une sauvegarde du jeu existe dans le bon 
+     * répertoire. Si le fichier n'existe pas la fonction appelle la fonction creerCSVSauvegardeJoueurs
+     */
+    void fichierSauvegardeEstCree() {
+        final String NOM_FICHIER_SAUVEGARDE = "sauvegardeJoueurs.csv";
+        final String CHEMIN_DOSSIER_SAUVEGARDE = "../sauvegardes";
         String[] allFilesFromDirectory = getAllFilesFromDirectory(CHEMIN_DOSSIER_SAUVEGARDE);
+        boolean estCree = false;
         int indice = 0;
         while (indice < length(allFilesFromDirectory) && !estCree) {
             if (equals(allFilesFromDirectory[indice], NOM_FICHIER_SAUVEGARDE)) {
@@ -212,15 +317,23 @@ class CoursDada extends Program {
         }
     }
 
+    /**
+     * La fonction creerCSVSauvegardeJoueurs créer un fichier CSV de sauvegarde dans le bon répertoire
+     */
     void creerCSVSauvegardeJoueurs() {
-        String[][] joueursCSV = new String[1][3];
-        joueursCSV[0][0] = "nomDuJoueur";
-        joueursCSV[0][1] = "positionDernièrePartie";
-        joueursCSV[0][2] = "meilleurScore";
+        String[][] joueursCSV = new String[1][4];
+        joueursCSV[0][IDX_NOM_SAUVEGARDE] = "nomDuJoueur";
+        joueursCSV[0][IDX_POSITION_SAUVEGARDE] = "positionDernièrePartie";
+        joueursCSV[0][IDX_MEILLEUR_SCORE_SAUVEGARDE] = "meilleurScore";
+        joueursCSV[0][IDX_SCORE_COURANT_SAUVEGARDE] = "scoreCourant";
         saveCSV(joueursCSV, CHEMIN_FICHIER_SAUVEGARDE);
         println("Fichier créé");
     }
 
+    /**
+     * La fonction recupererContenuCSV récupère le contenu d'un fichier CSV et ses élments dans un 
+     * tableau à doubles dimensions
+     */
     String[][] recupererContenuCSV(String cheminFichier) {
         CSVFile table = loadCSV(cheminFichier);
         int nombreLigneTable = rowCount(table);
@@ -234,9 +347,23 @@ class CoursDada extends Program {
         return contenuTable;
     }
 
+    void testRecupererContenuCSV() {
+        final String CHEMIN_FICHIER_TEST = "../autres/fichierDeTestCSV.csv";
+        String[][] contenuTest = recupererContenuCSV(CHEMIN_FICHIER_TEST);
+        int cpt = 1;
+        for (int idxLigne = 0; idxLigne < length(contenuTest); idxLigne++) {
+            for (int idxColonne = 0; idxColonne < length(contenuTest[idxLigne]); idxColonne++) {
+                assertEquals("test" + cpt, contenuTest[idxLigne][idxColonne]);
+                cpt = cpt + 1;
+            }
+        }
+    }
+    /**
+     * La fonction ajouterJoueurASauvegarde ajoute un nouveau joueur au fichier de sauvegarde
+     */
     void ajouterJoueurASauvegarde(Joueur joueur, String[][] contenuSauvegarde) {
         int nombreLigneTable = length(contenuSauvegarde);
-        String[][] contenuNouvelleSauvegarde = new String[nombreLigneTable + 1][3];
+        String[][] contenuNouvelleSauvegarde = new String[nombreLigneTable + 1][IDX_SCORE_COURANT_SAUVEGARDE + 1];
 
         for (int idxLigne = 0; idxLigne < nombreLigneTable; idxLigne++) {
             contenuNouvelleSauvegarde[idxLigne] = contenuSauvegarde[idxLigne];
@@ -250,6 +377,9 @@ class CoursDada extends Program {
         saveCSV(contenuNouvelleSauvegarde, CHEMIN_FICHIER_SAUVEGARDE);
     }
 
+    /**
+     * La fonction sauvegarderPartie actualise les données du joueur dans le fichier de sauvegarde
+     */
     void sauvegarderPartie(Joueur joueur, String[][] contenuSauvegarde) {
         int idxJoueurSauvegarde = idxStringDansTab(contenuSauvegarde, joueur.nom, IDX_NOM_SAUVEGARDE);
         contenuSauvegarde[idxJoueurSauvegarde][IDX_POSITION_SAUVEGARDE] = "" + joueur.position;
@@ -259,9 +389,12 @@ class CoursDada extends Program {
     }
 
     /**
-     * Fonctions liées au Joueur
+     ****** Fonctions liées au Joueur ******
      */
 
+    /**
+     * Cette fonction toString permet d'afficher les données d'une variable de type Joueur
+     */
     String toString(Joueur joueur) {
         return  "Joueur : "  + joueur.nom + 
                 " - Dernière position en jeu : " + joueur.position + 
@@ -269,6 +402,10 @@ class CoursDada extends Program {
                 " - Score courant du joueur : " + joueur.score;
     }
 
+    /**
+     * La fonction newJoueur créer une nouvelle variable de type Joueur selon les valeurs données en 
+     * paramètre de la fonction
+     */
     Joueur newJoueur(String nom, int dernierePosition, int meilleurScore, int score) {
         Joueur joueur = new Joueur();
         joueur.nom = nom;
@@ -278,6 +415,19 @@ class CoursDada extends Program {
         return joueur;
     }
 
+    void testNewJoueur() {
+        Joueur joueur =  newJoueur("Mathys", 3, 6, 4);
+        assertEquals("Mathys", joueur.nom);
+        assertEquals(3, joueur.position);
+        assertEquals(6, joueur.meilleurScore);
+        assertEquals(4, joueur.score);
+    }
+
+    /**
+     * La fonction affecterJoueur vérifie si un joueur existe dans la sauvegarde. Si il n'existe pas
+     * alors le joueur est ajouté à la sauvegarde. Renvoie la variable joueur créee avec les appels à la 
+     * fonction newJoueur
+     */
     Joueur affecterJoueur(String[][] contenuSauvegarde, String nomJoueur) {
         Joueur joueur;
         int idxJoueurSauvegarde = idxStringDansTab(contenuSauvegarde, nomJoueur, IDX_NOM_SAUVEGARDE);
@@ -293,6 +443,9 @@ class CoursDada extends Program {
         return joueur;
     }
 
+    /**
+     * La fonction deplacerJoueur modifie la variable position du joueur
+     */
     void deplacerJoueur(Joueur joueur, int valeur) {
         if ((joueur.position + valeur) < NOMBRE_CASE_PLATEAU) {
             joueur.position = joueur.position + valeur;
@@ -301,15 +454,21 @@ class CoursDada extends Program {
         }
     }
 
-
     /**
-     * Fonctions liées aux questions
+     ****** Fonctions liées aux questions ******
      */
 
+    /**
+     * Cette fonction toString permet d'afficher les données d'une variable de type Question
+     */
     String toString(Question question) {
         return "Question n° : " + question.num + " - Matière : " + question.matiere + " - Intitulé : " + question.intitule + " - Réponse : " + question.reponse;
     }
 
+    /**
+     * La fonction newQuestion créer une nouvelle variable de type Question selon les valeurs données en 
+     * paramètre de la fonction
+     */
     Question newQuestion(int num, String matiere, String intitule, String reponse) {
         Question question = new Question();
         question.num = num;
@@ -319,7 +478,13 @@ class CoursDada extends Program {
         return question;
     }
 
+    /**
+     * La fonction obtenirQuestionMatiere récupère les données du fichier des questions d'une matière donnée et retourne
+     * une variable une variable de type Question contenant tout les élements de la question récupérés
+     * dans les fichier
+     */
     Question obtenirQuestionMatiere(String matiere) {
+        final String CHEMIN_DOSSIER_QUESTIONS = "../questions/questions";
         String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_QUESTIONS + matiere + ".csv");
         int nombreQuestions = length(contenuQuestions) - 1;
         int indiceQuestion= entierRandom(1, nombreQuestions + 1); 
@@ -327,8 +492,15 @@ class CoursDada extends Program {
         return question;
     }
 
+    /**
+     * La fonction obtenirMatiereCase renvoie la matière associé à l'index d'une case. Si l'index ne 
+     * correspond à aucune matière alors une chaine de caractère vide est renvoyée
+     */
     String obtenirMatiereCase(int indexCase, int[] themesCases) {
         String matiere = "";
+        if (indexCase >= length(themesCases)) {
+            return matiere;
+        }
         int numThemeCase = themesCases[indexCase];
         if (numThemeCase < 0 || numThemeCase > 4) {
             return matiere;
@@ -354,13 +526,10 @@ class CoursDada extends Program {
         assertEquals("", obtenirMatiereCase(5, THEMES_CASES));
     }
 
-    void poserQuestion(Question question) {
-        renommerMatiereQuestion(question);
-        String texteQuestion = "Tu es tombé sur une question " + question.matiere + " !\n\n";
-        texteQuestion = texteQuestion + question.intitule + '\n';
-        println(texteQuestion);
-    }
-
+    /**
+     * La fonction renommerMatiereQuestion modifie la chaine de caractère contenant le thème de la 
+     * question pour que le thème puisse être affiché de manière accordée avec le reste de la phrase
+     */
     void renommerMatiereQuestion(Question question) {
         if (equals(question.matiere, "ChiffresRomains")) {
             question.matiere = "sur les chiffres romains";
@@ -376,17 +545,31 @@ class CoursDada extends Program {
     }
 
     /**
-     * Fonctions de vérification de la saisie utilisateur
+     ****** Fonctions de vérification de la saisie utilisateur ******
      */
 
+    /**
+     * La fonction estPrenomValide vérifie que le nom du joueur n'est pas trop long, qu'il ne contient 
+     * pas de retours à la ligne ni de virgules pour qu'il ne soit pas considérer comme un séparateur 
+     * dans le fichier CSV
+     */
     boolean estPrenomValide(String chaine) {
         return !(length(chaine) <= 0 || length(chaine) > 20 || charEstDansString(chaine, ',') || charEstDansString(chaine, '\n'));
     }
 
     /**
-     * Fonctions de gestion du plateau de jeu
+     ****** Fonctions de gestion du plateau de jeu ******
      */
 
+    /**
+     * La fonction genererThemesCasescgénére un tableau d'entiers contenant les indexs des différents thèmes des questions déterminés
+     * de manière aléatoire
+     * 0 = Anglais
+     * 1 = Chiffres romains
+     * 2 = Français
+     * 3 = Géographie
+     * 4 = Histoire
+     */
     int[] genererThemesCase() {
         int[] themes = new int[NOMBRE_CASE_PLATEAU - 2];
         for (int idxCase = 0; idxCase < length(themes); idxCase++) {
@@ -395,6 +578,15 @@ class CoursDada extends Program {
         return themes;
     }
 
+    /**
+     * La fonction genererCasesPlateau renvoie un tableau à deux dimensions contenant chaque ligne, et 
+     * pour chaque ligne chaque colonne, du plateau. Les patterns des cases sont stockés au format CSV et 
+     * il existe différents patterns pour une même case permettant à chacune de s'imbriquer. Par exemple, 
+     * certaines cases ne possèdent pas de bords gauche afin qu'elle puisse s'imbriquer avec une case à 
+     * sa gauche. Ces cases sont celles aux lignes 7 à 11 du fichier CSV. Celles ouvertes sur la droite 
+     * sont celles au ligne 12 à 16 du fichier CSV. La fonction détermine donc quel pattern utilisé pour 
+     * une case en fonction de la position du joueur et du thème de la case.
+     */
     String[][] genererCasesPlateau(int positionJoueur, int[] themesCases) {
         /**
          * Indices des cases thèmes ouvertes sur la gauche dans le tableau de patterns
@@ -430,19 +622,21 @@ class CoursDada extends Program {
         return indicesPlateau;
     }
 
-    String[][] deplacerJoueur(int anciennePosition, int positionJoueur, String[][] plateau) {
-        return new String[0][0];
-    }
-
+    /**
+     * La fonction assemblerPlateau renvoie une chaine de caractères fabriquées selon les patterns 
+     * donnés par la fonction genererCasesPlateau. La plateau est assemblée ligne par ligne. Cette 
+     * solution est une solution simple pour imbriquer les tableaux sans être embêtés par les retours à 
+     * la ligne et pouvoir faire simplement la colorisation de ce dernier
+     */
     String assemblerPlateau(String[][] casesPlateau) {
         String plateau = "";
         for (int idxLigne = 0; idxLigne < length(casesPlateau[0]); idxLigne++) {
             for (int idxCase = 0; idxCase < length(casesPlateau); idxCase++) {
                 if (idxCase == 0 || idxCase == (length(casesPlateau) - 1)) {
-                    plateau = plateau + BLEU + casesPlateau[idxCase][idxLigne] + RESET_COLOR;
+                    plateau = plateau + utiliserCouleur("bleu") + casesPlateau[idxCase][idxLigne] + utiliserCouleur("reset");
                 } else if (idxCase == 1) {
                     String ligne = casesPlateau[idxCase][idxLigne];
-                    plateau = plateau + BLEU + charAt(ligne, 0) + RESET_COLOR + substring(ligne, 1, length(ligne)); 
+                    plateau = plateau + utiliserCouleur("bleu") + charAt(ligne, 0) + utiliserCouleur("reset") + substring(ligne, 1, length(ligne)); 
                 } else {
                     plateau = plateau + casesPlateau[idxCase][idxLigne];
                 }
@@ -454,9 +648,12 @@ class CoursDada extends Program {
     }
 
     /**
-     * Fonctions utiles
+     ****** Fonctions utiles ******
      */
 
+    /**
+     * Cette fonction toString s'applique aux tableaux de chaines de caractères à une dimension
+     */
     String toString(String[] tab) {
         String chaine = "";
         for (int idxTab = 0; idxTab < length(tab) - 1; idxTab++) {
@@ -466,6 +663,9 @@ class CoursDada extends Program {
         return chaine;
     }
 
+    /**
+     * Cette fonction toString s'applique aux tableaux de chaines de caractères à deux dimensions
+     */
     String toString(String[][] tab) {
         String chaine = "";
         for (int idxLigne = 0; idxLigne < length(tab); idxLigne++) {
@@ -480,6 +680,9 @@ class CoursDada extends Program {
         return chaine;
     }
 
+    /**
+     * Cette fonction toString s'applique aux tableaux d'entiers à une dimension
+     */
     String toString(int[] tab) {
         String chaine = "";
         for (int idxTab = 0; idxTab < (length(tab) - 1); idxTab++) {
@@ -489,11 +692,12 @@ class CoursDada extends Program {
         return chaine;
     }
 
+    /**
+     * La fonction idxStringDansTab renvoie l'indice de la première occurence d'une chaine de caractères 
+     * dans un tableau à deux dimensions pour une colonne donnée. Si la chaine n'existe pas, la fonction 
+     * renvoie -1.
+     */
     int idxStringDansTab(String[][] tab, String chaine, int idxColonneCiblee) {
-        /**
-         * Renvoie l'indice de la première occurence d'une chaine de caractere dans un 
-         * tableau pour une colonne donnée. Si la chaine n'existe pas, -1 est renvoyé. 
-         */
         int indice = -1;
         int idxLigne = 0;
         boolean trouve = false;
@@ -511,6 +715,10 @@ class CoursDada extends Program {
         return indice;
     }
 
+    /**
+     * La fonction charEstDansString renvoie true si le caractère donné est contenu dans la chaine de 
+     * caractères donnée
+     */
     boolean charEstDansString(String chaine, char car) {
         boolean trouve = false;
         int idxChaine = 0;
@@ -528,6 +736,10 @@ class CoursDada extends Program {
         assertFalse(charEstDansString("test", 'a'));
     }
 
+    /**
+     * La fonction lireFichier reçoit en paramètre le chemin relatif d'un fichier et renvoie son contenu 
+     * sous la forme d'une chaine de caractères
+     */
     String lireFichier(String cheminFichier) {
         File fichierElements = newFile(cheminFichier);
         String chaine = "";
@@ -537,12 +749,13 @@ class CoursDada extends Program {
         return chaine;
     }
 
+    /**
+     * La fonction entierRandom renvoie un entier compris dans l'intervalle borneGauche inclus à 
+     * borneDroite exclus.
+     * 
+     * Attention : borneDroite doit être supérieur ou égal à borneGauche sinon 0 est retourné.
+     */
     int entierRandom(int borneGauche, int borneDroite) {
-        /**
-         * Renvoie un entier compris dans l'intervalle borneGauche inclus à borneDroite exclus. 
-         * Attention : borneDroite doit être supérieur ou égal à borneGauche sinon 0 est retourné.
-         */
-
         if (borneDroite < borneGauche) {
             return 0;
         }
@@ -551,6 +764,10 @@ class CoursDada extends Program {
         return (int)(alea * (borneDroite - borneGauche) + borneGauche);
     }
 
+    /**
+     * La fonction supprimerCaractereIdx supprime le caractère d'indice n (donné en paramètre) d'une 
+     * chaine de caractères
+     */
     String supprimerCaractereIdx(int idxASupprimer, String chaine) {
         String chaineModifiee = "";
         for (int idxChaine = 0; idxChaine < length(chaine); idxChaine ++) {

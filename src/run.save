@@ -1,2 +1,0 @@
-#!/bin/bash
-javac -cp ../program.jar:. Hello.java.

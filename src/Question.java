@@ -4,4 +4,5 @@ class Question {
     String matiere;
     String intitule;
     String reponse;
+    String[][] motsClesReponse;
 }

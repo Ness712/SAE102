@@ -18,7 +18,7 @@ class CoursDada extends Program {
     /**
      ****** Fonction d'algorithme principal ******
      */
-    void algorithm() {
+    void _algorithm() {
         /**
          * Récupération des données du jeu
          */
@@ -74,7 +74,7 @@ class CoursDada extends Program {
             dessinerJeu(TITRE_JEU, plateau, affichageDe, joueur.score);
             println("Tu viens d'avancer de " + valeurDe + " cases ! ");
 
-            if (!equals(attente, "sortie")) {
+            if (!equals(toUpperCase(attente), toUpperCase("sortie"))) {
                 boolean bonneReponse = true;
                 String reponseJoueur = "";
                 Question question = newQuestion(0, "", "", "");
@@ -111,6 +111,10 @@ class CoursDada extends Program {
         } else {
             println("A bientôt !");
         }
+    }
+
+    void algorithm() {
+        obtenirQuestionMatiere("Histoire");
     }
 
     /**
@@ -475,7 +479,45 @@ class CoursDada extends Program {
         question.matiere = matiere;
         question.intitule = intitule;
         question.reponse = reponse;
+        question.motsClesReponse = new String[0][0];
         return question;
+    }
+
+    String[][] recupererMotsClesReponse(String[][] contenuQuestions, int indiceQuestion) {
+        indiceQuestion = 3; /* PROUT */
+        String chaineMotsCles = contenuQuestions[indiceQuestion][3];
+        int[] indicesSeparateur = trouverIndicesCaractereDansChaine('|', chaineMotsCles);
+        
+        final int NOMBRE_MOTS_CLE_MAX = 3;
+        String[][] listesMotsCles = new String[length(indicesSeparateur)][NOMBRE_MOTS_CLE_MAX];
+
+        /*
+        for (int cptMotsCles = 0; cptMotsCles < length(indicesSeparateur); cptMotsCles++) {
+            listesMotsCles[cptMotsCles] = substring(chaineMotsCles)
+        }
+        */
+
+        return new String[0][0];
+    }
+
+    String[] extraireMotsSepares(String chaine, char separateur) {
+        int nombreMotsAExtraire = compterOccurencesCaractereDansChaine(separateur, chaine)
+        String[] listeMots = new String[nombreMotsAExtraire];
+        nombreMotsAExtraire += 1;
+        int cptMotsTrouves = 0;
+        int idxChaine = 0;
+
+        while (cptMotsTrouves < nombreMotsAExtraire && idxChaine < length(chaine)) {
+            if (charAt(chaine, idxChaine) == separateur) {
+                listeMots[cptMotsTrouves] = substring(chaine, 0, idxChaine + 1);
+                chaine = substring(chaine, idxChaine + 1, length(chaine));
+                idxChaine = 0;
+                cptMotsTrouves += 1;
+            } else {
+                idxChaine += 1;
+            }
+        }
+
     }
 
     /**
@@ -487,9 +529,9 @@ class CoursDada extends Program {
         final String CHEMIN_DOSSIER_QUESTIONS = "../questions/questions";
         String[][] contenuQuestions = recupererContenuCSV(CHEMIN_DOSSIER_QUESTIONS + matiere + ".csv");
         int nombreQuestions = length(contenuQuestions) - 1;
-        int indiceQuestion= entierRandom(1, nombreQuestions + 1); 
-        Question question = newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
-        return question;
+        int indiceQuestion = entierRandom(1, nombreQuestions + 1);
+        recupererMotsClesReponse(contenuQuestions, indiceQuestion);
+        return newQuestion(indiceQuestion, contenuQuestions[indiceQuestion][0], contenuQuestions[indiceQuestion][1],contenuQuestions[indiceQuestion][2]);
     }
 
     /**
@@ -684,12 +726,16 @@ class CoursDada extends Program {
      * Cette fonction toString s'applique aux tableaux d'entiers à une dimension
      */
     String toString(int[] tab) {
-        String chaine = "";
-        for (int idxTab = 0; idxTab < (length(tab) - 1); idxTab++) {
-            chaine = chaine + tab[idxTab] + " - ";
+        if (length(tab) <= 0) {
+            return "";
+        } else {
+            String chaine = "";
+            for (int idxTab = 0; idxTab < (length(tab) - 1); idxTab++) {
+                chaine = chaine + tab[idxTab] + " - ";
+            }
+            chaine = chaine + tab[length(tab) - 1];
+            return chaine;
         }
-        chaine = chaine + tab[length(tab) - 1];
-        return chaine;
     }
 
     /**
@@ -776,6 +822,31 @@ class CoursDada extends Program {
             }
         }
         return chaineModifiee;
+    }
+
+    int compterOccurencesCaractereDansChaine(char car, String chaine) {
+        int cptOccurences = 0;
+        for (int idxChaine = 0; idxChaine < length(chaine); idxChaine++) {
+            if (charAt(chaine, idxChaine) == car) {
+                cptOccurences += 1;
+            }
+        }
+        return cptOccurences;
+    }
+
+    int[] trouverIndicesCaractereDansChaine(char car, String chaine) {
+        int nbOccurences = compterOccurencesCaractereDansChaine(car, chaine);
+        int[] indicesOccurences = new int[nbOccurences];
+        int nbOccurencesTrouvees = 0;
+        int cpt = 0;
+        while ((cpt < length(chaine)) && (nbOccurencesTrouvees < nbOccurences)) {
+            if (charAt(chaine, cpt) == car) {
+                indicesOccurences[nbOccurencesTrouvees] = cpt;
+                nbOccurencesTrouvees += 1;
+            }
+            cpt += 1;
+        }
+        return indicesOccurences;
     }
 
 }

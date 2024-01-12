@@ -10,7 +10,8 @@ class CoursDada extends Program {
     final int IDX_MEILLEUR_SCORE_SAUVEGARDE = 2;
     final int IDX_SCORE_COURANT_SAUVEGARDE = 3;
 
-    final int NOMBRE_CASE_PLATEAU = 33;
+    final int NOMBRE_CASE_PLATEAU = 12;
+
     final int[] THEMES_CASES = genererThemesCase();
     final String TITRE_JEU = utiliserCouleur("vert") + supprimerCaractereIdx(length(lireFichier("../patterns/titre.txt")) - 1, lireFichier("../patterns/titre.txt")) + utiliserCouleur("reset");
     final String[] FACES_DE = recupererFacesDe();
@@ -33,10 +34,6 @@ class CoursDada extends Program {
         String nom = lancerJeu();
         Joueur joueur = affecterJoueur(contenuSauvegarde, nom);
         contenuSauvegarde = recupererContenuCSV(CHEMIN_FICHIER_SAUVEGARDE);
-
-        /**
-         * Premier affichage du plateau le dé n'étant pas encore lancé
-         */
         afficherDebutJeu(joueur);
         String[][] casesPlateau = genererCasesPlateau(joueur.position, THEMES_CASES);
         String plateau = assemblerPlateau(casesPlateau);
@@ -109,20 +106,8 @@ class CoursDada extends Program {
         if (fini) {
             finDePartie(joueur, contenuSauvegarde);
         } else {
+            sauvegarderPartie(joueur, contenuSauvegarde);
             println("A bientôt !");
-        }
-    }
-
-    void _algorithm() {
-        for (int cpt = 0; cpt < 20; cpt++) {
-            Question question = obtenirQuestionMatiere("Histoire");
-            println(question.intitule);
-            println();
-            String reponse = readString();
-            println(estBonneReponse(question, reponse));
-            if (!estBonneReponse(question, reponse)) {
-                println(question.reponse);
-            }
         }
     }
 
@@ -636,29 +621,6 @@ class CoursDada extends Program {
         return themes;
     }
 
-    String[][] recupererContenuTxt() {
-        String[][] fileAsString = new String[23][7];
-        File file = newFile("../patterns/cases_pattern.txt");
-        boolean finCase = true;
-        int indiceLigne = 0;
-        int indiceColonne = 0;
-        while (ready(file)) {
-            String ligne = readLine(file);
-            fileAsString[indiceLigne][indiceColonne] = ligne;
-            indiceColonne =indiceColonne + 1;
-            if (equals(ligne,"§-----------§") || equals(ligne,"-----------§") || equals(ligne,"§-----------") || equals(ligne,"-----------")) {
-                finCase = !finCase;
-            }
-            // println(ligne);
-            if (finCase) {
-                indiceLigne = indiceLigne + 1;
-                indiceColonne = 0;
-                // finCase = !finCase;
-            }
-        }
-        return fileAsString;
-    }
-
     /**
      * La fonction genererCasesPlateau renvoie un tableau à deux dimensions contenant chaque ligne, et 
      * pour chaque ligne chaque colonne, du plateau. Les patterns des cases sont stockés au format CSV et 
@@ -668,7 +630,6 @@ class CoursDada extends Program {
      * sont celles au ligne 12 à 16 du fichier CSV. La fonction détermine donc quel pattern utilisé pour 
      * une case en fonction de la position du joueur et du thème de la case.
      */
-    
     String[][] genererCasesPlateau(int positionJoueur, int[] themesCases) {
         /**
          * Indices des cases thèmes ouvertes sur la gauche dans le tableau de patterns
@@ -695,11 +656,7 @@ class CoursDada extends Program {
             indicesPlateau[positionJoueur] = patternsPlateau[IDX_CASE_JOUEUR];
         }
         for (int idxCase = 1; idxCase < positionJoueur; idxCase++) {
-            if ((idxCase % 10) == 0) {
-                indicesPlateau[idxCase] = patternsPlateau[themesCases[idxCase - 1] + 7];
-            } else {
-                indicesPlateau[idxCase] = patternsPlateau[themesCases[idxCase - 1] + 7];
-            }
+            indicesPlateau[idxCase] = patternsPlateau[themesCases[idxCase - 1] + 7];
         }
         for (int idxCase = positionJoueur + 1; idxCase < (NOMBRE_CASE_PLATEAU - 1); idxCase++) {
             indicesPlateau[idxCase] = patternsPlateau[themesCases[idxCase - 1] + 12];
@@ -708,9 +665,16 @@ class CoursDada extends Program {
         return indicesPlateau;
     }
 
-    String assemblerLignePlateau(String[][] casesPlateau, String plateau, int idxDebut, int idxFin, int retraitAutreLigneQueFin) {
-        for (int idxLigne = 0; idxLigne < length(casesPlateau[0])-retraitAutreLigneQueFin; idxLigne++) {
-            for (int idxCase = idxDebut; idxCase < idxFin ; idxCase++) {
+    /**
+     * La fonction assemblerPlateau renvoie une chaine de caractères fabriquées selon les patterns 
+     * donnés par la fonction genererCasesPlateau. La plateau est assemblée ligne par ligne. Cette 
+     * solution est une solution simple pour imbriquer les tableaux sans être embêtés par les retours à 
+     * la ligne et pouvoir faire simplement la colorisation de ce dernier
+     */
+    String assemblerPlateau(String[][] casesPlateau) {
+        String plateau = "";
+        for (int idxLigne = 0; idxLigne < length(casesPlateau[0]); idxLigne++) {
+            for (int idxCase = 0; idxCase < length(casesPlateau); idxCase++) {
                 if (idxCase == 0 || idxCase == (length(casesPlateau) - 1)) {
                     plateau = plateau + utiliserCouleur("bleu") + casesPlateau[idxCase][idxLigne] + utiliserCouleur("reset");
                 } else if (idxCase == 1) {
@@ -722,20 +686,7 @@ class CoursDada extends Program {
             }
             plateau = plateau + '\n';
         }
-        return plateau;
-    }
-    
-    /**
-     * La fonction assemblerPlateau renvoie une chaine de caractères fabriquées selon les patterns 
-     * donnés par la fonction genererCasesPlateau. La plateau est assemblée ligne par ligne. Cette 
-     * solution est une solution simple pour imbriquer les tableaux sans être embêtés par les retours à 
-     * la ligne et pouvoir faire simplement la colorisation de ce dernier
-     */
-    String assemblerPlateau(String[][] casesPlateau) {
-        String plateau = "";
-        plateau = assemblerLignePlateau(casesPlateau, plateau, 0, 11, 1);
-        plateau = assemblerLignePlateau(casesPlateau, plateau, 11, 22, 1);
-        plateau = assemblerLignePlateau(casesPlateau, plateau, 22, 33, 0);
+        plateau = supprimerCaractereIdx(length(plateau) - 1, plateau);
         return plateau;
     }
 
